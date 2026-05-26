@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Family Chore Chart</title>
+  <meta name="theme-color" content="#2D2D2D">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Chores">
+  <link rel="manifest" id="pwa-manifest">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23F7F3EE'/%3E%3Ctext x='256' y='360' font-size='320' text-anchor='middle'%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .hidden { display: none !important; }
+
+    :root {
+      --bg: #F7F3EE;
+      --text: #2D2D2D;
+      --muted: #999;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    body {
+      padding: max(env(safe-area-inset-top, 0px), 12px) 16px max(env(safe-area-inset-bottom, 0px), 24px);
+      min-height: 100dvh;
+    }
+
+    /* Install Banner */
+    #install-banner {
+      background: #2D2D2D; color: white; border-radius: 14px;
+      padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; font-size: 0.82rem; font-weight: 700; line-height: 1.4;
+    }
+    #install-banner .icon { font-size: 1.4rem; flex-shrink: 0; }
+    #install-banner .msg { flex: 1; }
+    #install-banner button {
+      background: rgba(255,255,255,0.15); border: none; color: white;
+      border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;
+      font-weight: 800; cursor: pointer; white-space: nowrap;
+    }
+
+    /* Header */
+    .app-header { text-align: center; margin-bottom: 22px; }
+    .app-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.8rem, 7vw, 3rem);
+      color: var(--text); letter-spacing: 0.5px; line-height: 1; margin-bottom: 6px;
+    }
+    .app-subtitle { color: var(--muted); font-size: 0.88rem; font-weight: 700; }
+    .week-label { font-size: 0.7rem; color: #bbb; font-weight: 700; margin-top: 4px; }
+
+    /* Name Grid */
+    .name-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
+    .name-tile {
+      border-radius: 14px; padding: 12px 6px; text-align: center;
+      cursor: pointer; transition: transform 0.15s ease;
+      -webkit-user-select: none; user-select: none;
+    }
+    .name-tile:active { transform: scale(0.95); }
+    .name-emoji { font-size: 1.7rem; margin-bottom: 4px; }
+    .name-label {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(0.9rem, 3.2vw, 1.15rem); color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;
+    }
+    .name-hint { font-size: 0.6rem; color: rgba(255,255,255,0.7); font-weight: 700; margin-top: 3px; }
+    .name-input-field {
+      background: rgba(255,255,255,0.25); border: 2px solid rgba(255,255,255,0.6);
+      border-radius: 8px; color: white; font-family: 'Fredoka One', cursive;
+      font-size: 1rem; text-align: center; outline: none; width: 100%; padding: 3px 4px;
+    }
+
+    /* Day Tabs */
+    .day-tabs {
+      display: flex; gap: 7px; margin-bottom: 18px;
+      overflow-x: auto; padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .day-tabs::-webkit-scrollbar { display: none; }
+    .day-tab {
+      padding: 9px 16px; border-radius: 30px; border: none;
+      font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.88rem;
+      cursor: pointer; white-space: nowrap; transition: all 0.15s ease;
+      background: white; color: #777; box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+    }
+    .day-tab.active { background: #2D2D2D; color: white; box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
+
+    /* Deep Clean Badge */
+    .deep-clean-badge { text-align: center; margin-bottom: 14px; }
+    .deep-clean-badge span {
+      display: inline-block;
+      background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+      color: white; border-radius: 20px; padding: 5px 18px;
+      font-size: 0.85rem; font-weight: 800; animation: pop 0.2s ease;
+    }
+
+    /* Cards */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .kid-card {
+      background: white; border-radius: 18px; overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      border: 2px solid transparent; transition: border-color 0.3s ease;
+    }
+    .card-header { padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+    .card-header-emoji { font-size: 1.4rem; }
+    .card-header-name { font-family: 'Fredoka One', cursive; font-size: 1.15rem; color: white; }
+    .card-header-sub { font-size: 0.65rem; color: rgba(255,255,255,0.8); font-weight: 700; text-transform: uppercase; }
+    .card-done-badge {
+      margin-left: auto; background: rgba(255,255,255,0.25);
+      border-radius: 20px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; color: white;
+    }
+    .card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .chore-row {
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+      transition: transform 0.12s ease; -webkit-user-select: none; user-select: none;
+    }
+    .chore-row:active { transform: scale(0.97); }
+    .chore-check {
+      width: 22px; height: 22px; border-radius: 7px; border: 2.5px solid;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 900; transition: all 0.15s ease;
+    }
+    .chore-text { font-size: 0.9rem; font-weight: 700; color: #333; line-height: 1.3; }
+    .chore-text.done { color: #ccc; text-decoration: line-through; }
+    .card-footer { padding: 0 14px 12px; }
+    .progress-track { height: 7px; border-radius: 10px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 10px; transition: width 0.4s ease; }
+    .progress-label { font-size: 0.68rem; color: #aaa; font-weight: 700; text-align: right; margin-top: 3px; }
+
+    .app-footer { text-align: center; margin-top: 24px; color: #ccc; font-size: 0.75rem; font-weight: 700; }
+
+    @keyframes pop {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="install-banner" class="hidden">
+  <div class="icon">📲</div>
+  <div class="msg" id="install-msg"></div>
+  <button id="install-dismiss">✕</button>
+</div>
+
+<div class="app-header">
+  <div class="app-title">🏠 Chore Chart</div>
+  <div class="app-subtitle">Mon – Sat &nbsp;•&nbsp; Sunday is a rest day 🎉</div>
+  <div class="week-label" id="week-label"></div>
+</div>
+
+<div class="name-grid" id="name-grid"></div>
+<div class="day-tabs"  id="day-tabs"></div>
+<div class="deep-clean-badge hidden" id="deep-clean-badge">
+  <span>🧹 Deep Clean Day — Extra scrubbing required! 💪</span>
+</div>
+<div class="cards-grid" id="cards-grid"></div>
+<div class="app-footer">Sunday is a rest day 😴 &nbsp;•&nbsp; Data saved on this device</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const COLORS = [
+  { bg:"#FF6B6B", light:"#FFE5E5", text:"#C0392B", emoji:"🌟" },
+  { bg:"#4ECDC4", light:"#E0F8F7", text:"#1A9E95", emoji:"🚀" },
+  { bg:"#FFD93D", light:"#FFF8DC", text:"#B8860B", emoji:"🎯" },
+  { bg:"#6BCB77", light:"#E4F7E6", text:"#2E8B57", emoji:"🦋" },
+];
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const ROTATION = [
+  // Monday
+  [["Load dishwasher","Sweep kitchen floor","Set dinner table"],
+   ["Unload dishwasher","Wipe kitchen counters","Dinner cleanup"],
+   ["Tidy living room","Take out trash","Lead scripture study"],
+   ["Vacuum living room","Fold & put away laundry","Clear dinner table"]],
+  // Tuesday
+  [["Wipe kitchen counters","Take out trash","Clear dinner table"],
+   ["Load dishwasher","Sweep kitchen floor","Lead scripture study"],
+   ["Unload dishwasher","Fold & put away laundry","Set dinner table"],
+   ["Tidy living room","Vacuum living room","Dinner cleanup"]],
+  // Wednesday
+  [["Tidy living room","Vacuum living room","Dinner cleanup"],
+   ["Sweep kitchen floor","Take out trash","Set dinner table"],
+   ["Load dishwasher","Wipe kitchen counters","Clear dinner table"],
+   ["Unload dishwasher","Fold & put away laundry","Lead scripture study"]],
+  // Thursday
+  [["Unload dishwasher","Fold & put away laundry","Lead scripture study"],
+   ["Tidy living room","Sweep kitchen floor","Clear dinner table"],
+   ["Wipe kitchen counters","Take out trash","Dinner cleanup"],
+   ["Load dishwasher","Vacuum living room","Set dinner table"]],
+  // Friday
+  [["Load dishwasher","Wipe stovetop & microwave","Dinner cleanup"],
+   ["Unload dishwasher","Empty all trash cans","Clear dinner table"],
+   ["Sweep kitchen floor","Tidy entryway & mudroom","Lead scripture study"],
+   ["Vacuum living room","Fold & put away laundry","Set dinner table"]],
+  // Saturday deep clean
+  [["Clean upstairs bathroom","Vacuum all carpets & rugs","Wipe down stovetop & oven"],
+   ["Clean downstairs bathroom","Dust all furniture & shelves","Clean microwave inside/out"],
+   ["Clean basement bathroom","Clean windows & mirrors"],
+   ["Take out bedroom trash","Take out basement trash"]],
+];
+
+// ── Week helpers ──────────────────────────────────────────────────────────────
+function getWeekKey() {
+  const now = new Date();
+  const day = now.getDay() || 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - day + 1);
+  const jan4 = new Date(monday.getFullYear(), 0, 4);
+  const w1start = new Date(jan4);
+  w1start.setDate(jan4.getDate() - ((jan4.getDay() || 7) - 1));
+  const week = Math.round((monday - w1start) / 604800000) + 1;
+  return `${monday.getFullYear()}-W${String(week).padStart(2,"0")}`;
+}
+function getTodayIdx() {
+  const d = new Date().getDay();
+  return d === 0 ? 0 : d - 1;
+}
+
+const WEEK_KEY    = getWeekKey();
+const WEEK_NUM    = parseInt(WEEK_KEY.split("-W")[1], 10);
+const SAT_OFFSET  = WEEK_NUM % 4;
+const CHECKED_KEY = `chores:checked:${WEEK_KEY}`;
+const NAMES_KEY   = "chores:names";
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let names        = ["Olly","Shep","Sam","Anabelle"];
+let checked      = {};
+let activeDay    = getTodayIdx();
+let editingIdx   = null;
+
+function load() {
+  try { const v = localStorage.getItem(CHECKED_KEY); if (v) checked = JSON.parse(v); } catch(e){}
+  try { const v = localStorage.getItem(NAMES_KEY);   if (v) names   = JSON.parse(v); } catch(e){}
+}
+function saveChecked() { try { localStorage.setItem(CHECKED_KEY, JSON.stringify(checked)); } catch(e){} }
+function saveNames()   { try { localStorage.setItem(NAMES_KEY,   JSON.stringify(names));   } catch(e){} }
+
+function cKey(d,k,c)  { return `${d}-${k}-${c}`; }
+function isDone(d,k,c){ return !!checked[cKey(d,k,c)]; }
+function toggle(d,k,c){
+  checked[cKey(d,k,c)] = !checked[cKey(d,k,c)];
+  saveChecked();
+  renderCards();
+}
+
+// ── PWA manifest ──────────────────────────────────────────────────────────────
+(function(){
+  const m = {
+    name:"Family Chore Chart", short_name:"Chores",
+    start_url:"./", display:"standalone", orientation:"portrait",
+    background_color:"#F7F3EE", theme_color:"#2D2D2D",
+    icons:[{ src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23F7F3EE'/%3E%3Ctext x='256' y='360' font-size='320' text-anchor='middle'%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E", sizes:"512x512", type:"image/svg+xml", purpose:"any maskable" }]
+  };
+  try {
+    const blob = new Blob([JSON.stringify(m)],{type:"application/manifest+json"});
+    document.getElementById("pwa-manifest").href = URL.createObjectURL(blob);
+  } catch(e){}
+})();
+
+// ── Install banner ────────────────────────────────────────────────────────────
+(function(){
+  if (localStorage.getItem("chores:banner-ok")) return;
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  if (isStandalone) return;
+  const isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const banner = document.getElementById("install-banner");
+  const msg    = document.getElementById("install-msg");
+  if (isIOS) {
+    msg.textContent = 'Tap the Share button in Safari, then "Add to Home Screen" to install this app.';
+    banner.classList.remove("hidden");
+  } else if (isAndroid) {
+    msg.textContent = 'Tap the browser menu \u22EE and choose "Add to Home Screen" to install.';
+    banner.classList.remove("hidden");
+  }
+  document.getElementById("install-dismiss").addEventListener("click", () => {
+    banner.classList.add("hidden");
+    localStorage.setItem("chores:banner-ok","1");
+  });
+})();
+
+// ── Render: week label ────────────────────────────────────────────────────────
+function renderHeader() {
+  document.getElementById("week-label").textContent = `${WEEK_KEY} \u00B7 Resets automatically each Monday`;
+}
+
+// ── Render: name tiles ────────────────────────────────────────────────────────
+function renderNames() {
+  const grid = document.getElementById("name-grid");
+  grid.innerHTML = "";
+  names.forEach((name, i) => {
+    const tile = document.createElement("div");
+    tile.className = "name-tile";
+    tile.style.background = COLORS[i].bg;
+
+    if (editingIdx === i) {
+      tile.innerHTML = `<div class="name-emoji">${COLORS[i].emoji}</div>
+        <input class="name-input-field" id="ni${i}" value="${name.replace(/"/g,'&quot;')}" maxlength="12" placeholder="Name">`;
+      tile.addEventListener("click", e => e.stopPropagation());
+      setTimeout(() => { const el = document.getElementById(`ni${i}`); if(el){el.focus();el.select();} }, 10);
+      tile.querySelector("input").addEventListener("input",  e => { names[i]=e.target.value; saveNames(); });
+      tile.querySelector("input").addEventListener("blur",   () => { editingIdx=null; renderNames(); renderCards(); });
+      tile.querySelector("input").addEventListener("keydown",e => { if(e.key==="Enter"){ editingIdx=null; renderNames(); renderCards(); }});
+    } else {
+      tile.innerHTML = `<div class="name-emoji">${COLORS[i].emoji}</div>
+        <div class="name-label">${name}</div>
+        <div class="name-hint">tap to rename</div>`;
+      tile.addEventListener("click", () => { editingIdx=i; renderNames(); });
+    }
+    grid.appendChild(tile);
+  });
+}
+
+// ── Render: day tabs ──────────────────────────────────────────────────────────
+function renderTabs() {
+  const tabs = document.getElementById("day-tabs");
+  tabs.innerHTML = "";
+  DAYS.forEach((day, i) => {
+    const btn = document.createElement("button");
+    btn.className = "day-tab" + (activeDay===i ? " active" : "");
+    btn.textContent = (i===5?"🧹 ":"") + day;
+    btn.addEventListener("click", () => { activeDay=i; renderTabs(); renderBadge(); renderCards(); });
+    tabs.appendChild(btn);
+  });
+}
+
+// ── Render: deep-clean badge ──────────────────────────────────────────────────
+function renderBadge() {
+  const el = document.getElementById("deep-clean-badge");
+  if (activeDay===5) el.classList.remove("hidden");
+  else el.classList.add("hidden");
+}
+
+// ── Render: chore cards ───────────────────────────────────────────────────────
+function renderCards() {
+  const grid = document.getElementById("cards-grid");
+  grid.innerHTML = "";
+  const isSat = activeDay === 5;
+
+  names.forEach((name, ki) => {
+    const ci     = isSat ? (ki + SAT_OFFSET) % ROTATION[5].length : ki;
+    const chores = ROTATION[activeDay][ci];
+    const color  = COLORS[ki];
+    const done   = chores.filter(c => isDone(activeDay, ki, c)).length;
+    const all    = done === chores.length;
+    const pct    = Math.round((done / chores.length) * 100);
+
+    const card = document.createElement("div");
+    card.className = "kid-card";
+    card.style.borderColor = all ? color.bg : "transparent";
+
+    // Header
+    const hdr = document.createElement("div");
+    hdr.className = "card-header";
+    hdr.style.background = color.bg;
+    hdr.innerHTML = `
+      <span class="card-header-emoji">${color.emoji}</span>
+      <div>
+        <div class="card-header-name">${name}</div>
+        <div class="card-header-sub">${DAYS[activeDay].toUpperCase()} ${isSat?"DEEP CLEAN":"CHORES"}</div>
+      </div>
+      ${all ? '<div class="card-done-badge">\u2713 Done!</div>' : ""}`;
+    card.appendChild(hdr);
+
+    // Chore rows
+    const body = document.createElement("div");
+    body.className = "card-body";
+    chores.forEach(chore => {
+      const ck = isDone(activeDay, ki, chore);
+      const row = document.createElement("div");
+      row.className = "chore-row";
+      row.innerHTML = `
+        <div class="chore-check" style="border-color:${ck?color.bg:color.text}; background:${ck?color.bg:"transparent"}; color:${ck?"white":color.text}">
+          ${ck ? "\u2713" : ""}
+        </div>
+        <span class="chore-text${ck?" done":""}">${chore}</span>`;
+      row.addEventListener("click", () => toggle(activeDay, ki, chore));
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+
+    // Progress
+    const foot = document.createElement("div");
+    foot.className = "card-footer";
+    foot.innerHTML = `
+      <div class="progress-track" style="background:${color.light}">
+        <div class="progress-bar" style="background:${color.bg}; width:${pct}%"></div>
+      </div>
+      <div class="progress-label">${done}/${chores.length} done</div>`;
+    card.appendChild(foot);
+
+    grid.appendChild(card);
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+load();
+renderHeader();
+renderNames();
+renderTabs();
+renderBadge();
+renderCards();
+setTimeout(() => {
+  const a = document.querySelector(".day-tab.active");
+  if (a) a.scrollIntoView({ inline:"center", behavior:"smooth" });
+}, 80);
+</script>
+</body>
+</html>
